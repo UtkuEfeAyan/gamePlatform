@@ -42,6 +42,17 @@ class Load extends Phaser.Scene {
         // The multiatlas was created using TexturePacker and the Kenny
         // Particle Pack asset pack.
         this.load.multiatlas("kenny-particles", "kenny-particles.json");
+
+
+        // Load background music
+        this.load.audio("backgroundMusic", "Tricky.mp3");
+
+
+        // Load sound effects
+        this.load.audio("jumpSound", "jump.mp3");
+        this.load.audio("landSound", "land.mp3");
+        this.load.audio("walkSound", "walk.mp3");
+        //this.load.audio("trailSound", "trail.mp3"); it was too much noise
     }
 
     create() {
@@ -58,7 +69,7 @@ class Load extends Phaser.Scene {
             repeat: 0
         });
 
-        
+
         this.anims.create({
             key: 'walk',
             frames: this.anims.generateFrameNames('platformer_characters', {

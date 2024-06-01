@@ -91,7 +91,7 @@ class Platformer extends Phaser.Scene {
         // jumping VFX
         my.vfx.jumpingInstant = this.add.particles(0, 0, "kenny-particles", {
             frame: ['muzzle_02.png', 'muzzle_02.png'],
-            scale: { start: 0.1, end: 0.2 },
+            scale: { start: 0.1, end: 0.3 },
             lifespan: 200,
             alpha: { start: 1, end: 0.1 }
         });
@@ -119,6 +119,16 @@ class Platformer extends Phaser.Scene {
         // Camera code
         this.cameras.main.setDeadzone(10, 10);
         this.cameras.main.setZoom(this.SCALE);
+
+        // Play background music
+        this.backgroundMusic = this.sound.add("backgroundMusic", { loop: true }, { volume: 1.1 });
+        this.backgroundMusic.play(); 
+
+        // Load sound effects
+        this.jumpSound = this.sound.add("jumpSound", { volume: 0.18 });
+        this.landSound = this.sound.add("landSound", { volume: 3.0 });
+        this.walkSound = this.sound.add("walkSound", { volume: 2.5 });
+        //this.trailSound = this.sound.add("trailSound", { volume: 0.3 });
     }
 
     update() {
@@ -129,6 +139,10 @@ class Platformer extends Phaser.Scene {
             my.vfx.walking.startFollow(my.sprite.player, my.sprite.player.displayWidth / 2 - 10, my.sprite.player.displayHeight / 2 - 5, false);
             my.vfx.walking.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
             if (my.sprite.player.body.blocked.down) {
+                if (!this.walkingSoundPlaying) {
+                    this.walkSound.play();
+                    this.walkingSoundPlaying = true;
+                }
                 my.vfx.walking.start();
                 my.vfx.trail.stop();
             }
@@ -139,6 +153,10 @@ class Platformer extends Phaser.Scene {
             my.vfx.walking.startFollow(my.sprite.player, my.sprite.player.displayWidth / 2 - 10, my.sprite.player.displayHeight / 2 - 5, false);
             my.vfx.walking.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
             if (my.sprite.player.body.blocked.down) {
+                if (!this.walkingSoundPlaying) {
+                    this.walkSound.play();
+                    this.walkingSoundPlaying = true;
+                }
                 my.vfx.walking.start();
                 my.vfx.trail.stop();
             }
@@ -146,6 +164,8 @@ class Platformer extends Phaser.Scene {
             my.sprite.player.setAccelerationX(0);
             my.sprite.player.setDragX(this.DRAG);
             my.sprite.player.anims.play('idle');
+            this.walkSound.stop();
+            this.walkingSoundPlaying = false;
             my.vfx.walking.stop();
             my.vfx.trail.stop();
         }
@@ -155,17 +175,24 @@ class Platformer extends Phaser.Scene {
             my.sprite.player.anims.play('jump');
             my.vfx.walking.stop();
             my.vfx.trail.emitParticleAt(my.sprite.player.x, my.sprite.player.y + my.sprite.player.height / 2);
+            //if (!this.trailSoundPlaying) {
+            //   this.trailSound.play();
+            //    this.trailSoundPlaying = true;
+            //}
         }
         if (my.sprite.player.body.blocked.down && Phaser.Input.Keyboard.JustDown(cursors.up)) {
             my.sprite.player.body.setVelocityY(this.JUMP_VELOCITY);
             my.vfx.jumpingInstant.emitParticleAt(my.sprite.player.x, my.sprite.player.y + my.sprite.player.height / 2);
             my.vfx.trail.stop();
+            this.jumpSound.play();
         }
 
         // play landing animation and VFX if player lands
         if (my.sprite.player.body.blocked.down && !this.wasOnGround) {
+            this.landSound.play();
             my.sprite.player.anims.play('land');
             my.vfx.landing.emitParticleAt(my.sprite.player.x, my.sprite.player.y + my.sprite.player.height / 2);
+            
         }
         this.wasOnGround = my.sprite.player.body.blocked.down;
         

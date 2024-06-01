@@ -11,7 +11,8 @@ class Platformer extends Phaser.Scene {
         this.JUMP_VELOCITY = -500;
         this.PARTICLE_VELOCITY = 50;
         this.SCALE = 2.0;
-        const coinCounter = 0
+        this.coinCounter = 0;
+        this.wasOnGround = false;
     }
 
     create() {
@@ -71,12 +72,39 @@ class Platformer extends Phaser.Scene {
 
         // Movement VFX
         my.vfx.walking = this.add.particles(0, 0, "kenny-particles", {
-            frame: ['smoke_02.png', 'smoke_08.png'],
+            frame: ['smoke_2.png', 'spark_3.png'],
             scale: { start: 0.01, end: 0.04 },
             lifespan: 300,
             alpha: { start: 1, end: 0.1 },
         });
         my.vfx.walking.stop();
+
+        // trail VFX
+        my.vfx.trail = this.add.particles(0, 0, "kenny-particles", {
+            frame: ['star_04.png', 'star_06.png'],
+            scale: { start: 0.02, end: 0.11 },
+            lifespan: 400,
+            alpha: { start: 1, end: 0.1 }
+        });
+        my.vfx.trail.stop();
+
+        // jumping VFX
+        my.vfx.jumpingInstant = this.add.particles(0, 0, "kenny-particles", {
+            frame: ['muzzle_02.png', 'muzzle_02.png'],
+            scale: { start: 0.1, end: 0.2 },
+            lifespan: 200,
+            alpha: { start: 1, end: 0.1 }
+        });
+        my.vfx.jumpingInstant.stop();
+
+        // Landing VFX similar to jumpingInstant
+        my.vfx.landing = this.add.particles(0, 0, "kenny-particles", {
+            frame: ['dirt_02.png', 'dirt_03.png'],
+            scale: { start: 0.1, end: 0.2 },
+            lifespan: 200,
+            alpha: { start: 1, end: 0.1 }
+        });
+        my.vfx.landing.stop();
 
         // Set world bounds to match the tilemap width only
         this.physics.world.setBounds(0, 0, this.map.widthInPixels, Number.MAX_SAFE_INTEGER);
@@ -102,6 +130,7 @@ class Platformer extends Phaser.Scene {
             my.vfx.walking.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
             if (my.sprite.player.body.blocked.down) {
                 my.vfx.walking.start();
+                my.vfx.trail.stop();
             }
         } else if (cursors.right.isDown) {
             my.sprite.player.setAccelerationX(this.ACCELERATION);
@@ -111,21 +140,35 @@ class Platformer extends Phaser.Scene {
             my.vfx.walking.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
             if (my.sprite.player.body.blocked.down) {
                 my.vfx.walking.start();
+                my.vfx.trail.stop();
             }
         } else {
             my.sprite.player.setAccelerationX(0);
             my.sprite.player.setDragX(this.DRAG);
             my.sprite.player.anims.play('idle');
             my.vfx.walking.stop();
+            my.vfx.trail.stop();
         }
 
         // player jump
         if (!my.sprite.player.body.blocked.down) {
             my.sprite.player.anims.play('jump');
+            my.vfx.walking.stop();
+            my.vfx.trail.emitParticleAt(my.sprite.player.x, my.sprite.player.y + my.sprite.player.height / 2);
         }
         if (my.sprite.player.body.blocked.down && Phaser.Input.Keyboard.JustDown(cursors.up)) {
             my.sprite.player.body.setVelocityY(this.JUMP_VELOCITY);
+            my.vfx.jumpingInstant.emitParticleAt(my.sprite.player.x, my.sprite.player.y + my.sprite.player.height / 2);
+            my.vfx.trail.stop();
         }
+
+        // play landing animation and VFX if player lands
+        if (my.sprite.player.body.blocked.down && !this.wasOnGround) {
+            my.sprite.player.anims.play('land');
+            my.vfx.landing.emitParticleAt(my.sprite.player.x, my.sprite.player.y + my.sprite.player.height / 2);
+        }
+        this.wasOnGround = my.sprite.player.body.blocked.down;
+        
 
         if (Phaser.Input.Keyboard.JustDown(this.rKey)) {
             this.scene.restart();

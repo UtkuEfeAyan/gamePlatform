@@ -46,6 +46,20 @@ class Load extends Phaser.Scene {
 
     create() {
         this.anims.create({
+            key: 'land',
+            frames: this.anims.generateFrameNames('platformer_characters', {
+                prefix: 'tile_',
+                start: 4,
+                end: 5,
+                zeroPad: 4,
+                suffix: '.png'
+            }),
+            frameRate: 10,
+            repeat: 0
+        });
+
+        
+        this.anims.create({
             key: 'walk',
             frames: this.anims.generateFrameNames('platformer_characters', {
                 prefix: "tile_",

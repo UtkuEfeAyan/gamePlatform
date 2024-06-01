@@ -11,6 +11,7 @@ class Platformer extends Phaser.Scene {
         this.JUMP_VELOCITY = -500;
         this.PARTICLE_VELOCITY = 50;
         this.SCALE = 2.0;
+        const coinCounter = 0
     }
 
     create() {
@@ -46,7 +47,7 @@ class Platformer extends Phaser.Scene {
         this.coinGroup = this.add.group(this.coins);
 
         // Set up player avatar
-        my.sprite.player = this.physics.add.sprite(200, 300, "platformer_characters", "tile_0000.png");
+        my.sprite.player = this.physics.add.sprite(200, 1500, "platformer_characters", "tile_0000.png");
         my.sprite.player.setCollideWorldBounds(true);
 
         // Enable collision handling
@@ -70,9 +71,9 @@ class Platformer extends Phaser.Scene {
 
         // Movement VFX
         my.vfx.walking = this.add.particles(0, 0, "kenny-particles", {
-            frame: ['smoke_03.png', 'smoke_09.png'],
-            scale: { start: 0.03, end: 0.1 },
-            lifespan: 350,
+            frame: ['smoke_02.png', 'smoke_08.png'],
+            scale: { start: 0.01, end: 0.04 },
+            lifespan: 300,
             alpha: { start: 1, end: 0.1 },
         });
         my.vfx.walking.stop();
@@ -85,7 +86,7 @@ class Platformer extends Phaser.Scene {
 
         // Set camera bounds to match the tilemap size
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
-        this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25);
+        this.cameras.main.startFollow(my.sprite.player, true, 0.35, 0.35);
 
         // Camera code
         this.cameras.main.setDeadzone(10, 10);

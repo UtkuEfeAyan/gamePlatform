@@ -7,7 +7,7 @@ class Platformer extends Phaser.Scene {
         // variables and settings
         this.ACCELERATION = 400;
         this.DRAG = 500;    // DRAG < ACCELERATION = icy slide
-        this.physics.world.gravity.y = 1500;
+        this.physics.world.gravity.y = 1350;
         this.JUMP_VELOCITY = -500;
         this.PARTICLE_VELOCITY = 50;
         this.SCALE = 2.0;
@@ -29,10 +29,14 @@ class Platformer extends Phaser.Scene {
         this.decorLayer = this.map.createLayer("decor-n-non-interactibles", [this.tilemap_tiles, this.industry_tiles], 0, 0);
         this.industryGroundLayer = this.map.createLayer("industry-platforms", this.industry_tiles, 0, 0);
         this.industryDecorLayer = this.map.createLayer("industry-decor", this.industry_tiles, 0, 0);
+        this.secret = this.map.createLayer("secret", [this.tilemap_tiles, this.industry_tiles], 0, 0);
 
         // Make layers collidable
         this.groundLayer.setCollisionByProperty({ collides: true });
         this.industryGroundLayer.setCollisionByProperty({ collides: true });
+        this.decorLayer.setCollisionByProperty({ collides: true });
+        this.industryDecorLayer.setCollisionByProperty({ collides: true });
+        this.secret.setCollisionByProperty({ collides: true });
 
         // Create coins
         this.coins = this.map.createFromObjects("Objects", {
@@ -54,6 +58,9 @@ class Platformer extends Phaser.Scene {
         // Enable collision handling
         this.physics.add.collider(my.sprite.player, this.groundLayer);
         this.physics.add.collider(my.sprite.player, this.industryGroundLayer);
+        this.physics.add.collider(my.sprite.player, this.secret);
+        this.physics.add.collider(my.sprite.player, this.decorLayer);
+        this.physics.add.collider(my.sprite.player, this.industryDecorLayer);
 
         // Handle collision detection with coins
         this.physics.add.overlap(my.sprite.player, this.coinGroup, (obj1, obj2) => {
@@ -121,13 +128,13 @@ class Platformer extends Phaser.Scene {
         this.cameras.main.setZoom(this.SCALE);
 
         // Play background music
-        this.backgroundMusic = this.sound.add("backgroundMusic", { loop: true }, { volume: 1.1 });
+        this.backgroundMusic = this.sound.add("backgroundMusic", { volume: 0.5 }, { loop: true });
         this.backgroundMusic.play(); 
 
         // Load sound effects
-        this.jumpSound = this.sound.add("jumpSound", { volume: 0.18 });
-        this.landSound = this.sound.add("landSound", { volume: 3.0 });
-        this.walkSound = this.sound.add("walkSound", { volume: 2.5 });
+        this.jumpSound = this.sound.add("jumpSound", { volume: 0.1 });
+        this.landSound = this.sound.add("landSound", { volume: 1.5 });
+        this.walkSound = this.sound.add("walkSound", { volume: 2. });
         //this.trailSound = this.sound.add("trailSound", { volume: 0.3 });
     }
 

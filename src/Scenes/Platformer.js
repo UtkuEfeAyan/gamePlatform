@@ -132,7 +132,7 @@ class Platformer extends Phaser.Scene {
         this.backgroundMusic.play(); 
 
         // Load sound effects
-        this.jumpSound = this.sound.add("jumpSound", { volume: 0.1 });
+        this.jumpSound = this.sound.add("jumpSound", { volume: 0.05 });
         this.landSound = this.sound.add("landSound", { volume: 1.5 });
         this.walkSound = this.sound.add("walkSound", { volume: 2. });
         //this.trailSound = this.sound.add("trailSound", { volume: 0.3 });

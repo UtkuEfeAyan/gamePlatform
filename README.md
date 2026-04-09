@@ -2,6 +2,8 @@
 
 A 2D Top-scrolling platformer built with [Phaser 3](https://phaser.io/) and Arcade Physics. Guide your character through multi-layered tile maps, collect coins, and enjoy juicy particle effects and sound design as you run, jump, and land across platforms.
 
+🔗 **[Play it live on GitHub Pages](https://UtkuEfeAyan.github.io/gamePlatform/)**
+
 ---
 
 ## 🎮 Controls

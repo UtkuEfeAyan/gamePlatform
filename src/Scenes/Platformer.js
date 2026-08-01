@@ -69,6 +69,12 @@ class Platformer extends Phaser.Scene {
 
         // Set up Phaser-provided cursor key input
         cursors = this.input.keyboard.createCursorKeys();
+        this.wasd = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            down: Phaser.Input.Keyboard.KeyCodes.S,
+            right: Phaser.Input.Keyboard.KeyCodes.D
+        });
         this.rKey = this.input.keyboard.addKey('R');
 
         // Debug key listener (assigned to D key)
@@ -128,7 +134,7 @@ class Platformer extends Phaser.Scene {
         this.cameras.main.setZoom(this.SCALE);
 
         // Play background music
-        this.backgroundMusic = this.sound.add("backgroundMusic", { volume: 0.5 }, { loop: true });
+        this.backgroundMusic = this.sound.add("backgroundMusic", { volume: 0.5, loop: true });
         this.backgroundMusic.play(); 
 
         // Load sound effects
@@ -139,7 +145,11 @@ class Platformer extends Phaser.Scene {
     }
 
     update() {
-        if (cursors.left.isDown) {
+        const moveLeft = cursors.left.isDown || this.wasd.left.isDown;
+        const moveRight = cursors.right.isDown || this.wasd.right.isDown;
+        const jumpPressed = Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(this.wasd.up);
+
+        if (moveLeft) {
             my.sprite.player.setAccelerationX(-this.ACCELERATION);
             my.sprite.player.resetFlip();
             my.sprite.player.anims.play('walk', true);
@@ -153,7 +163,7 @@ class Platformer extends Phaser.Scene {
                 my.vfx.walking.start();
                 my.vfx.trail.stop();
             }
-        } else if (cursors.right.isDown) {
+        } else if (moveRight) {
             my.sprite.player.setAccelerationX(this.ACCELERATION);
             my.sprite.player.setFlip(true, false);
             my.sprite.player.anims.play('walk', true);
@@ -187,7 +197,7 @@ class Platformer extends Phaser.Scene {
             //    this.trailSoundPlaying = true;
             //}
         }
-        if (my.sprite.player.body.blocked.down && Phaser.Input.Keyboard.JustDown(cursors.up)) {
+        if (my.sprite.player.body.blocked.down && jumpPressed) {
             my.sprite.player.body.setVelocityY(this.JUMP_VELOCITY);
             my.vfx.jumpingInstant.emitParticleAt(my.sprite.player.x, my.sprite.player.y + my.sprite.player.height / 2);
             my.vfx.trail.stop();

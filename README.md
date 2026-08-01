@@ -13,8 +13,10 @@ A 2D Top-scrolling platformer built with [Phaser 3](https://phaser.io/) and Arca
 | **← Left Arrow** | Move left |
 | **→ Right Arrow** | Move right |
 | **↑ Up Arrow** | Jump (must be on the ground) |
+| **W / A / S / D** | Alternative movement controls |
 | **R** | Restart the level |
-| **D** | Toggle physics debug overlay |
+| **P** | Toggle audio settings panel (top-left) |
+| **F3** | Toggle physics debug overlay |
 
 ---
 
@@ -26,6 +28,7 @@ A 2D Top-scrolling platformer built with [Phaser 3](https://phaser.io/) and Arca
 - Particle VFX for walking dust, jump burst, air trail, and landing impact
 - Contextual sound effects: footsteps, jump, and landing
 - Looping background music ("Tricky.mp3")
+- Live audio mixer panel with separate Music and SFX volume controls
 - Camera smoothly follows the player with a deadzone and 2× zoom
 
 ---

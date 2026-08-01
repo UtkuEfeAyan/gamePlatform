@@ -13,6 +13,13 @@ class Platformer extends Phaser.Scene {
         this.SCALE = 2.0;
         this.coinCounter = 0;
         this.wasOnGround = false;
+
+        // Audio settings
+        this.musicVolume = 0.5;
+        this.sfxVolume = 0.8;
+        this.volumeStep = 0.05;
+        this.volumeMenuVisible = false;
+        this.volumeSelection = "music";
     }
 
     create() {
@@ -76,12 +83,8 @@ class Platformer extends Phaser.Scene {
             right: Phaser.Input.Keyboard.KeyCodes.D
         });
         this.rKey = this.input.keyboard.addKey('R');
-
-        // Debug key listener (assigned to D key)
-        this.input.keyboard.on('keydown-D', () => {
-            this.physics.world.drawDebug = this.physics.world.drawDebug ? false : true;
-            this.physics.world.debugGraphic.clear();
-        }, this);
+        this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+        this.debugKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
 
         // Movement VFX
         my.vfx.walking = this.add.particles(0, 0, "kenny-particles", {
@@ -134,17 +137,53 @@ class Platformer extends Phaser.Scene {
         this.cameras.main.setZoom(this.SCALE);
 
         // Play background music
-        this.backgroundMusic = this.sound.add("backgroundMusic", { volume: 0.5, loop: true });
+        this.backgroundMusic = this.sound.add("backgroundMusic", { volume: this.musicVolume, loop: true });
         this.backgroundMusic.play(); 
 
         // Load sound effects
-        this.jumpSound = this.sound.add("jumpSound", { volume: 0.05 });
-        this.landSound = this.sound.add("landSound", { volume: 1.5 });
-        this.walkSound = this.sound.add("walkSound", { volume: 2. });
+        this.jumpSound = this.sound.add("jumpSound", { volume: this.sfxVolume * 0.06 });
+        this.landSound = this.sound.add("landSound", { volume: this.sfxVolume * 1.0 });
+        this.walkSound = this.sound.add("walkSound", { volume: this.sfxVolume * 0.8 });
         //this.trailSound = this.sound.add("trailSound", { volume: 0.3 });
+
+        this.createVolumeUI();
+        this.refreshAudioVolumes();
     }
 
     update() {
+        if (Phaser.Input.Keyboard.JustDown(this.pKey)) {
+            this.volumeMenuVisible = !this.volumeMenuVisible;
+            this.volumePanelBg.setVisible(this.volumeMenuVisible);
+            this.volumePanelText.setVisible(this.volumeMenuVisible);
+            this.volumeHintText.setVisible(this.volumeMenuVisible);
+            this.updateVolumeUI();
+        }
+
+        if (this.volumeMenuVisible) {
+            if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
+                this.volumeSelection = "music";
+                this.updateVolumeUI();
+            }
+
+            if (Phaser.Input.Keyboard.JustDown(cursors.down)) {
+                this.volumeSelection = "sfx";
+                this.updateVolumeUI();
+            }
+
+            if (Phaser.Input.Keyboard.JustDown(cursors.left)) {
+                this.adjustSelectedVolume(-this.volumeStep);
+            }
+
+            if (Phaser.Input.Keyboard.JustDown(cursors.right)) {
+                this.adjustSelectedVolume(this.volumeStep);
+            }
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(this.debugKey)) {
+            this.physics.world.drawDebug = this.physics.world.drawDebug ? false : true;
+            this.physics.world.debugGraphic.clear();
+        }
+
         const moveLeft = cursors.left.isDown || this.wasd.left.isDown;
         const moveRight = cursors.right.isDown || this.wasd.right.isDown;
         const jumpPressed = Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(this.wasd.up);
@@ -220,5 +259,82 @@ class Platformer extends Phaser.Scene {
 
         // Adjust camera scrollY to follow the player
         this.cameras.main.scrollY = my.sprite.player.y - this.cameras.main.height / 2;
+    }
+
+    createVolumeUI() {
+        const textStyle = {
+            fontFamily: 'monospace',
+            fontSize: '14px',
+            color: '#ffffff'
+        };
+
+        this.volumePanelBg = this.add.rectangle(150, 70, 280, 120, 0x000000, 0.6)
+            .setScrollFactor(0)
+            .setDepth(1000)
+            .setVisible(false);
+
+        this.volumePanelText = this.add.text(20, 26, '', textStyle)
+            .setScrollFactor(0)
+            .setDepth(1001)
+            .setVisible(false);
+
+        this.volumeHintText = this.add.text(20, 118, 'P: toggle | Up/Down: select | Left/Right: change | F3: debug', {
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            color: '#c8d2ff'
+        })
+            .setScrollFactor(0)
+            .setDepth(1001)
+            .setVisible(false);
+
+        this.updateVolumeUI();
+    }
+
+    adjustSelectedVolume(delta) {
+        if (this.volumeSelection === "music") {
+            this.musicVolume = Phaser.Math.Clamp(this.musicVolume + delta, 0, 1);
+        } else {
+            this.sfxVolume = Phaser.Math.Clamp(this.sfxVolume + delta, 0, 1);
+        }
+
+        this.refreshAudioVolumes();
+        this.updateVolumeUI();
+    }
+
+    refreshAudioVolumes() {
+        if (this.backgroundMusic) {
+            this.backgroundMusic.setVolume(this.musicVolume);
+        }
+
+        if (this.jumpSound) {
+            this.jumpSound.setVolume(this.sfxVolume * 0.06);
+        }
+
+        if (this.landSound) {
+            this.landSound.setVolume(this.sfxVolume * 1.0);
+        }
+
+        if (this.walkSound) {
+            this.walkSound.setVolume(this.sfxVolume * 0.8);
+        }
+    }
+
+    formatVolumeBar(volume) {
+        const totalBars = 10;
+        const filledBars = Math.round(volume * totalBars);
+        return '[' + '#'.repeat(filledBars) + '-'.repeat(totalBars - filledBars) + ']';
+    }
+
+    updateVolumeUI() {
+        const musicPointer = this.volumeSelection === "music" ? '>' : ' ';
+        const sfxPointer = this.volumeSelection === "sfx" ? '>' : ' ';
+        const musicPercent = Math.round(this.musicVolume * 100);
+        const sfxPercent = Math.round(this.sfxVolume * 100);
+
+        this.volumePanelText.setText(
+            'Audio Settings\n' +
+            `${musicPointer} Music ${this.formatVolumeBar(this.musicVolume)} ${musicPercent}%\n` +
+            `${sfxPointer} SFX   ${this.formatVolumeBar(this.sfxVolume)} ${sfxPercent}%`
+        );
     }
 }

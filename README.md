@@ -10,13 +10,13 @@ A 2D Top-scrolling platformer built with [Phaser 3](https://phaser.io/) and Arca
 
 | Key | Action |
 |---|---|
-| **← Left Arrow** | Move left |
-| **→ Right Arrow** | Move right |
-| **↑ Up Arrow** | Jump (must be on the ground) |
-| **W / A / S / D** | Alternative movement controls |
+| **A / D** | Move left / right |
+| **W** | Jump (must be on the ground) |
 | **R** | Restart the level |
-| **P** | Toggle audio settings panel (top-left) |
-| **F3** | Toggle physics debug overlay |
+| **P** | Toggle small audio panel (top-left) |
+| **↑ / ↓ Arrow** | Increase / decrease SFX volume (while panel is open) |
+| **← / → Arrow** | Decrease / increase Music volume (while panel is open) |
+| **K** | Toggle physics debug overlay |
 
 ---
 

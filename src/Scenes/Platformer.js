@@ -19,7 +19,8 @@ class Platformer extends Phaser.Scene {
         this.sfxVolume = 0.8;
         this.volumeStep = 0.05;
         this.volumeMenuVisible = false;
-        this.volumeSelection = "music";
+        this.lastVolumeToggleTime = -1000;
+        this.volumeToggleCooldownMs = 150;
     }
 
     create() {
@@ -84,7 +85,31 @@ class Platformer extends Phaser.Scene {
         });
         this.rKey = this.input.keyboard.addKey('R');
         this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
-        this.debugKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
+        this.debugKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
+        this.input.keyboard.addCapture([
+            Phaser.Input.Keyboard.KeyCodes.UP,
+            Phaser.Input.Keyboard.KeyCodes.DOWN,
+            Phaser.Input.Keyboard.KeyCodes.LEFT,
+            Phaser.Input.Keyboard.KeyCodes.RIGHT,
+            Phaser.Input.Keyboard.KeyCodes.P,
+            Phaser.Input.Keyboard.KeyCodes.K,
+            Phaser.Input.Keyboard.KeyCodes.W,
+            Phaser.Input.Keyboard.KeyCodes.A,
+            Phaser.Input.Keyboard.KeyCodes.S,
+            Phaser.Input.Keyboard.KeyCodes.D,
+            Phaser.Input.Keyboard.KeyCodes.R
+        ]);
+
+        this.input.keyboard.on('keydown-P', (event) => {
+            if (!event.repeat) {
+                this.requestToggleVolumeMenu();
+            }
+        });
+        this.input.keyboard.on('keydown', (event) => {
+            if (!event.repeat && (event.code === 'KeyP' || event.key === 'p' || event.key === 'P')) {
+                this.requestToggleVolumeMenu();
+            }
+        });
 
         // Movement VFX
         my.vfx.walking = this.add.particles(0, 0, "kenny-particles", {
@@ -152,30 +177,26 @@ class Platformer extends Phaser.Scene {
 
     update() {
         if (Phaser.Input.Keyboard.JustDown(this.pKey)) {
-            this.volumeMenuVisible = !this.volumeMenuVisible;
-            this.volumePanelBg.setVisible(this.volumeMenuVisible);
-            this.volumePanelText.setVisible(this.volumeMenuVisible);
-            this.volumeHintText.setVisible(this.volumeMenuVisible);
-            this.updateVolumeUI();
+            this.requestToggleVolumeMenu();
         }
 
         if (this.volumeMenuVisible) {
+            this.updateVolumeMenuPosition();
+
             if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
-                this.volumeSelection = "music";
-                this.updateVolumeUI();
+                this.adjustSfxVolume(this.volumeStep);
             }
 
             if (Phaser.Input.Keyboard.JustDown(cursors.down)) {
-                this.volumeSelection = "sfx";
-                this.updateVolumeUI();
+                this.adjustSfxVolume(-this.volumeStep);
             }
 
             if (Phaser.Input.Keyboard.JustDown(cursors.left)) {
-                this.adjustSelectedVolume(-this.volumeStep);
+                this.adjustMusicVolume(-this.volumeStep);
             }
 
             if (Phaser.Input.Keyboard.JustDown(cursors.right)) {
-                this.adjustSelectedVolume(this.volumeStep);
+                this.adjustMusicVolume(this.volumeStep);
             }
         }
 
@@ -184,9 +205,9 @@ class Platformer extends Phaser.Scene {
             this.physics.world.debugGraphic.clear();
         }
 
-        const moveLeft = cursors.left.isDown || this.wasd.left.isDown;
-        const moveRight = cursors.right.isDown || this.wasd.right.isDown;
-        const jumpPressed = Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(this.wasd.up);
+        const moveLeft = this.wasd.left.isDown;
+        const moveRight = this.wasd.right.isDown;
+        const jumpPressed = Phaser.Input.Keyboard.JustDown(this.wasd.up);
 
         if (moveLeft) {
             my.sprite.player.setAccelerationX(-this.ACCELERATION);
@@ -268,34 +289,110 @@ class Platformer extends Phaser.Scene {
             color: '#ffffff'
         };
 
-        this.volumePanelBg = this.add.rectangle(150, 70, 280, 120, 0x000000, 0.6)
+        this.volumeIndicatorBg = this.add.rectangle(86, 16, 164, 24, 0x000000, 0.7)
             .setScrollFactor(0)
-            .setDepth(1000)
+            .setDepth(999)
+            .setStrokeStyle(1, 0x86a8ff, 1);
+
+        this.volumeIndicatorText = this.add.text(10, 8, 'Press P: Audio Mixer', {
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            color: '#d7e2ff'
+        })
+            .setScrollFactor(0)
+            .setDepth(1701);
+
+        this.volumeScreenOverlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.5)
+            .setOrigin(0, 0)
+            .setScrollFactor(0)
+            .setDepth(1600)
             .setVisible(false);
 
-        this.volumePanelText = this.add.text(20, 26, '', textStyle)
-            .setScrollFactor(0)
-            .setDepth(1001)
+        this.volumePanelBg = this.add.rectangle(160, 78, 320, 150, 0x000000, 0.92)
+            .setDepth(1601)
+            .setStrokeStyle(2, 0x7cf5ff, 1)
             .setVisible(false);
 
-        this.volumeHintText = this.add.text(20, 118, 'P: toggle | Up/Down: select | Left/Right: change | F3: debug', {
+        this.volumePanelText = this.add.text(20, 30, '', textStyle)
+            .setDepth(1602)
+            .setVisible(false);
+
+        this.volumeHintText = this.add.text(20, 124, 'Arrows adjust sound | P close | K debug', {
             fontFamily: 'monospace',
             fontSize: '11px',
             color: '#c8d2ff'
         })
-            .setScrollFactor(0)
-            .setDepth(1001)
+            .setDepth(1602)
+            .setVisible(false);
+
+        this.volumeDebugText = this.add.text(20, 140, '', {
+            fontFamily: 'monospace',
+            fontSize: '10px',
+            color: '#7cf5ff'
+        })
+            .setDepth(1602)
             .setVisible(false);
 
         this.updateVolumeUI();
     }
 
-    adjustSelectedVolume(delta) {
-        if (this.volumeSelection === "music") {
-            this.musicVolume = Phaser.Math.Clamp(this.musicVolume + delta, 0, 1);
-        } else {
-            this.sfxVolume = Phaser.Math.Clamp(this.sfxVolume + delta, 0, 1);
+    requestToggleVolumeMenu() {
+        const now = this.time.now;
+        if (now - this.lastVolumeToggleTime < this.volumeToggleCooldownMs) {
+            return;
         }
+
+        this.lastVolumeToggleTime = now;
+        this.toggleVolumeMenu();
+    }
+
+    toggleVolumeMenu() {
+        this.volumeMenuVisible = !this.volumeMenuVisible;
+        this.volumeScreenOverlay.setVisible(this.volumeMenuVisible);
+        this.volumePanelBg.setVisible(this.volumeMenuVisible);
+        this.volumePanelText.setVisible(this.volumeMenuVisible);
+        this.volumeHintText.setVisible(this.volumeMenuVisible);
+        this.volumeDebugText.setVisible(this.volumeMenuVisible);
+        this.updateVolumeMenuPosition();
+        console.log(`[AudioMixer] ${this.volumeMenuVisible ? 'opened' : 'closed'}`);
+        this.updateVolumeUI();
+    }
+
+    updateVolumeMenuPosition() {
+        if (!this.volumeMenuVisible) {
+            return;
+        }
+
+        const camera = this.cameras.main;
+        const worldView = camera.worldView;
+        const panelWidth = this.volumePanelBg.width;
+        const panelHeight = this.volumePanelBg.height;
+
+        // Keep a full-screen dimmer over the current viewport.
+        this.volumeScreenOverlay.setPosition(0, 0);
+        this.volumeScreenOverlay.setSize(camera.width, camera.height);
+
+        // Place the panel slightly above the player, then clamp into camera view.
+        const desiredX = my.sprite.player.x;
+        const desiredY = my.sprite.player.y - 110;
+        const panelX = Phaser.Math.Clamp(desiredX, worldView.x + panelWidth / 2 + 8, worldView.right - panelWidth / 2 - 8);
+        const panelY = Phaser.Math.Clamp(desiredY, worldView.y + panelHeight / 2 + 8, worldView.bottom - panelHeight / 2 - 8);
+
+        this.volumePanelBg.setPosition(panelX, panelY);
+        this.volumePanelText.setPosition(panelX - panelWidth / 2 + 14, panelY - panelHeight / 2 + 12);
+        this.volumeHintText.setPosition(panelX - panelWidth / 2 + 14, panelY + panelHeight / 2 - 26);
+        this.volumeDebugText.setPosition(panelX - panelWidth / 2 + 14, panelY + panelHeight / 2 - 14);
+    }
+
+    adjustMusicVolume(delta) {
+        this.musicVolume = Phaser.Math.Clamp(this.musicVolume + delta, 0, 1);
+
+        this.refreshAudioVolumes();
+        this.updateVolumeUI();
+    }
+
+    adjustSfxVolume(delta) {
+        this.sfxVolume = Phaser.Math.Clamp(this.sfxVolume + delta, 0, 1);
 
         this.refreshAudioVolumes();
         this.updateVolumeUI();
@@ -326,15 +423,25 @@ class Platformer extends Phaser.Scene {
     }
 
     updateVolumeUI() {
-        const musicPointer = this.volumeSelection === "music" ? '>' : ' ';
-        const sfxPointer = this.volumeSelection === "sfx" ? '>' : ' ';
         const musicPercent = Math.round(this.musicVolume * 100);
         const sfxPercent = Math.round(this.sfxVolume * 100);
 
+        if (this.volumeMenuVisible) {
+            this.volumeIndicatorText.setText('Audio Mixer: ON (P to close)');
+            this.volumeIndicatorText.setColor('#8aff8a');
+        } else {
+            this.volumeIndicatorText.setText('Audio Mixer: OFF (Press P)');
+            this.volumeIndicatorText.setColor('#d7e2ff');
+        }
+
         this.volumePanelText.setText(
             'Audio Settings\n' +
-            `${musicPointer} Music ${this.formatVolumeBar(this.musicVolume)} ${musicPercent}%\n` +
-            `${sfxPointer} SFX   ${this.formatVolumeBar(this.sfxVolume)} ${sfxPercent}%`
+            `Music ${this.formatVolumeBar(this.musicVolume)} ${musicPercent}%\n` +
+            `SFX   ${this.formatVolumeBar(this.sfxVolume)} ${sfxPercent}%`
+        );
+
+        this.volumeDebugText.setText(
+            `player: (${Math.round(my.sprite.player.x)}, ${Math.round(my.sprite.player.y)}) panel: (${Math.round(this.volumePanelBg.x)}, ${Math.round(this.volumePanelBg.y)})`
         );
     }
 }

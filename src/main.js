@@ -31,6 +31,11 @@ let config = {
     },
     width: 800,
     height: 800,
+    scale: {
+        mode: Phaser.Scale.FIT,
+        parent: 'phaser-game',
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
     scene: [Load, Platformer]
 }
 
